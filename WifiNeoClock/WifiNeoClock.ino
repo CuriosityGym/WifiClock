@@ -25,22 +25,21 @@
 #include <EEPROM.h>
 #include <ESP8266WebServer.h>
 
-#include <Adafruit_NeoPixel.h>
+#include <NeoPixelBus.h>
 
 #define UTCOffsetAddress 65
 
 #define TIMECHECK 60000
 
-#define PIN 4
+#define PIN 2
 #define CLOCKPIXELS 36
-// Parameter 1 = number of pixels in strip
-// Parameter 2 = Arduino pin number (most are valid)
-// Parameter 3 = pixel type flags, add together as needed:
-//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
-//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(CLOCKPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+RgbColor red = RgbColor(10,0,0);
+RgbColor orange = RgbColor(10,10,0);
+RgbColor white = RgbColor(10, 10, 10);
+RgbColor yellow = RgbColor(10, 10, 0);
+
+NeoPixelBus strip = NeoPixelBus(CLOCKPIXELS, PIN);
 const IPAddress AP_IP(192, 168, 1, 1);
 const char* AP_SSID = "WIFI_PIXEL_CLOCK";
 boolean SETUP_MODE;
@@ -50,7 +49,6 @@ ESP8266WebServer WEB_SERVER(80);
 String DEVICE_TITLE = "Wifi Clock";
 
 unsigned long lastMillis=millis();
-
 
 
 byte hourVal;
@@ -68,6 +66,7 @@ boolean isTimeZoneahead=true;
 boolean isPostMeridien=false;
 boolean UTCPostMeridien=false;
 boolean firstRequest=true;
+byte failedAttemptsCount=0;
 int i,p;
 int j;
 
@@ -102,21 +101,26 @@ void setup()
         UTCOffset= EEPROMReadlong(UTCOffsetAddress);
         Serial.println(UTCOffset);
         Serial.println("IP address: ");
-        Serial.println(WiFi.localIP());
-        
+        Serial.println(WiFi.localIP());        
         Serial.println("Starting UDP");
         udp.begin(localPort);
         Serial.print("Local port: ");
         Serial.println(udp.localPort());
-        strip.begin();
-        strip.show(); // Initialize all pixels to 'off'
+        strip.Begin();
+        strip.Show(); // Initialize all pixels to 'off'
+        //showNoInternetOnLEDs();
       
+    }
+    else
+    {
+      SETUP_MODE = true;
     }
   }
   else
   {
     SETUP_MODE = true;
     Serial.println("SetupMode=True");
+    showReadyForSetup();
     setupMode();
     return;
   }
@@ -131,8 +135,8 @@ void loop()
   {
     // Serial.println("Process");
     DNS_SERVER.processNextRequest(); 
-       
-    //return;
+    WEB_SERVER.handleClient();   
+    return;
   }  
   WEB_SERVER.handleClient();  
   if(millis()-lastMillis>TIMECHECK || firstRequest)
@@ -151,9 +155,11 @@ void loop()
     if (!cb)
     {
         Serial.println("no packet yet");
+        failedAttemptsCount=failedAttemptsCount+1;
     }
     else
     {
+        failedAttemptsCount=0;
         Serial.print("packet received, length=");
         Serial.println(cb);
         // We've received a packet, read the data from it
@@ -182,8 +188,31 @@ void loop()
     
     
     }
+    if(failedAttemptsCount>3)
+    {
+      showNoInternetOnLEDs();
+      failedAttemptsCount=0;
+    }
   }
   
+}
+
+void showNoInternetOnLEDs()
+{
+  for(i=0;i<CLOCKPIXELS;i++)
+  {
+        strip.SetPixelColor(i, red);
+        strip.Show();
+  }
+}
+
+void showReadyForSetup()
+{
+  for(i=0;i<CLOCKPIXELS;i++)
+  {
+        strip.SetPixelColor(i, orange);
+        strip.Show();
+  }
 }
 
 
@@ -279,7 +308,7 @@ void showTimeOnLEDs(byte hh, byte mm)
   
  for(i=0;i<CLOCKPIXELS;i++)
   {
-        strip.setPixelColor(i, strip.Color(3,0,3));
+        strip.SetPixelColor(i, RgbColor(3,0,3));
         //strip.show();
   }
   byte minuteLED=mm/2.5;
@@ -296,20 +325,20 @@ void showTimeOnLEDs(byte hh, byte mm)
  if(isPostMeridien)// its PM
  { 
   //12 o clock
-   strip.setPixelColor(0, strip.Color(10,10,10));
-   strip.setPixelColor(24, strip.Color(10,10,10));
+   strip.SetPixelColor(0, white);
+   strip.SetPixelColor(24, white);
 
    //3 o clock
-   strip.setPixelColor(6, strip.Color(10,10,10));
-   strip.setPixelColor(27, strip.Color(10,10,10));
+   strip.SetPixelColor(6, white);
+   strip.SetPixelColor(27, white);
   
   //6 o clock
-   strip.setPixelColor(12, strip.Color(10,10,10));
-   strip.setPixelColor(30, strip.Color(10,10,10));
+   strip.SetPixelColor(12, white);
+   strip.SetPixelColor(30, white);
    
   //9 o clock
-   strip.setPixelColor(18, strip.Color(10,10,10));
-   strip.setPixelColor(33, strip.Color(10,10,10)); 
+   strip.SetPixelColor(18, white);
+   strip.SetPixelColor(33, white); 
   
   
  
@@ -318,20 +347,20 @@ void showTimeOnLEDs(byte hh, byte mm)
  {
 
    //12 o clock
-   strip.setPixelColor(0, strip.Color(10,10,0));
-   strip.setPixelColor(24, strip.Color(10,10,0));
+   strip.SetPixelColor(0, yellow);
+   strip.SetPixelColor(24, yellow);
 
    //3 o clock
-   strip.setPixelColor(6, strip.Color(10,10,0));
-   strip.setPixelColor(27, strip.Color(10,10,0));
+   strip.SetPixelColor(6, yellow);
+   strip.SetPixelColor(27, yellow);
   
   //6 o clock
-   strip.setPixelColor(12, strip.Color(10,10,0));
-   strip.setPixelColor(30, strip.Color(10,10,0));
+   strip.SetPixelColor(12, yellow);
+   strip.SetPixelColor(30, yellow);
    
   //9 o clock
-   strip.setPixelColor(18, strip.Color(10,10,0));
-   strip.setPixelColor(33, strip.Color(10,10,0)); 
+   strip.SetPixelColor(18, yellow);
+   strip.SetPixelColor(33, yellow); 
     
   
   
@@ -340,10 +369,10 @@ void showTimeOnLEDs(byte hh, byte mm)
   
  
  
- strip.setPixelColor(minuteLED, strip.Color(0,0,60));
- strip.setPixelColor(hourLED, strip.Color(0,60,0));
+ strip.SetPixelColor(minuteLED, RgbColor(0,0,60));
+ strip.SetPixelColor(hourLED, RgbColor(0,60,0));
 
- strip.show();
+ strip.Show();
 }
 
 
