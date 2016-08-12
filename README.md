@@ -2,9 +2,11 @@
 ts a pretty simple project. We use an ESP8266 to fetch time from an NTP server, and two Neopixel Rings ( 12 LED and 24 LEDs) To show minutes and hours. 
 
 Feature List 
-1) Shows AM and PM by Color of LED's on 3,6,9,12 positions ( AM is yellow because the Sun is yellow, PM is white because the Moon is white) 
-2) Hours is green in color, Minutes is Blue. 
-3) Exposes Webpage and AP for configuration of Wifi credentials, timezone setup. 
+- Shows AM and PM by Color of LED's on 3,6,9,12 positions ( AM is yellow because the Sun is yellow, PM is white because the Moon is white) 
+
+-  Hours is green in color, Minutes is Blue.
+
+- Exposes Webpage and AP for configuration of Wifi credentials, timezone setup. 
 
 TODO 
 - Allow turning off the clock from webpage( ESP remains on, Neopixels are turned off) 
