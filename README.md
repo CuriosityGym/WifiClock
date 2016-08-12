@@ -1,5 +1,5 @@
 # WifiClock
-ts a pretty simple project. We use an ESP8266 to fetch time from an NTP server, and two Neopixel Rings ( 12 LED and 24 LEDs) To show minutes and hours. 
+It's a pretty simple project. We use an ESP8266 to fetch time from an NTP server, and two Neopixel Rings ( 12 LED and 24 LEDs) To show minutes and hours. 
 
 Feature List 
 - Shows AM and PM by Color of LED's on 3,6,9,12 positions ( AM is yellow because the Sun is yellow, PM is white because the Moon is white) 
